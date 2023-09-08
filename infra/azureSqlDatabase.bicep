@@ -81,9 +81,9 @@ var dtuCapacity = isProd ? 125 : 10
 var requestedBackupStorageRedundancy = isProd ? 'Geo' : 'Local'
 var readScale = isProd ? 'Enabled' : 'Disabled'
 
-
 resource sqlDatabase 'Microsoft.Sql/servers/databases@2021-11-01-preview' = {
-  name: '${sqlServer.name}/${sqlCatalogName}'
+  parent: sqlServer
+  name: sqlCatalogName
   location: location
   tags: union(tags, {
     displayName: sqlCatalogName
@@ -138,7 +138,6 @@ resource createSqlUserScript 'Microsoft.Resources/deploymentScripts@2020-10-01' 
 
 output sqlServerFqdn string = sqlServer.properties.fullyQualifiedDomainName
 output sqlCatalogName string = sqlCatalogName
-
 output sqlServerName string = sqlServer.name
 output sqlServerId string = sqlServer.id
 output sqlDatabaseName string = sqlDatabase.name

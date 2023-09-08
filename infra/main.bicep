@@ -16,9 +16,6 @@ param principalId string
 @description('Will select production ready SKUs when `true`')
 param isProd string = 'false'
 
-@description('Should specify an Azure region, if not set to none, to trigger multiregional deployment. The second region should be different than the `location` . e.g. `westus3`')
-param secondaryAzureLocation string
-
 @secure()
 @description('Specifies a password that will be used to secure the Azure SQL Database')
 param azureSqlPassword string = ''
@@ -58,13 +55,8 @@ var tags = {
   'azd-env-name': name
 }
 
-var isMultiLocationDeployment = secondaryAzureLocation == '' ? false : true
-
 var primaryResourceGroupName = '${name}-rg'
-var secondaryResourceGroupName = '${name}-secondary-rg'
-
 var primaryResourceToken = toLower(uniqueString(subscription().id, primaryResourceGroupName, location))
-var secondaryResourceToken = toLower(uniqueString(subscription().id, secondaryResourceGroupName, secondaryAzureLocation))
 
 module logAnalyticsForDiagnostics 'logAnalyticsWorkspaceForDiagnostics.bicep' = {
   name: 'logAnalyticsForDiagnostics'
@@ -92,15 +84,6 @@ module devOpsIdentitySetup './devOpsIdentitySetup.bicep' = {
   }
 }
 
-// temporary workaround for multiple resource group bug
-// https://github.com/Azure/azure-dev/issues/690
-// `azd down` expects to be able to delete this resource because it was listed by the azure deployment output even when it is not deployed
-resource secondaryResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
-  name: secondaryResourceGroupName
-  location: isMultiLocationDeployment ? secondaryAzureLocation : location
-  tags: tags
-}
-
 module primaryResources './resources.bicep' = {
   name: 'primary-${primaryResourceToken}'
   scope: primaryResourceGroup
@@ -121,80 +104,11 @@ module primaryResources './resources.bicep' = {
   }
 }
 
-module devOpsIdentitySetupSecondary './devOpsIdentitySetup.bicep' = if (isMultiLocationDeployment) {
-  name: 'devOpsIdentitySetupSecondary'
-  scope: secondaryResourceGroup
-  params: {
-    tags: tags
-    location: location
-    resourceToken: secondaryResourceToken
-  }
-}
-
-module secondaryResources './resources.bicep' = if (isMultiLocationDeployment) {
-  name: 'secondary-${primaryResourceToken}'
-  scope: secondaryResourceGroup
-  params: {
-    azureSqlPassword: azureSqlPassword
-    // when not deployed, the evaluation of this template must still supply a valid parameter
-    devOpsManagedIdentityId: isMultiLocationDeployment ? devOpsIdentitySetupSecondary.outputs.devOpsManagedIdentityId : 'none'
-    isProd: isProdBool
-    location: secondaryAzureLocation
-    principalId: principalId
-    principalType: principalType
-    resourceToken: secondaryResourceToken
-    tags: tags
-    azureAdApiScopeFrontEnd: azureAdApiScopeFrontEnd
-    azureAdClientIdForBackEnd: azureAdClientIdForBackEnd
-    azureAdClientIdForFrontEnd: azureAdClientIdForFrontEnd
-    azureAdClientSecretForFrontEnd: azureAdClientSecretForFrontEnd
-    azureAdTenantId: azureAdTenantId
-  }
-}
-
-module azureFrontDoor './azureFrontDoor.bicep' = {
-  name: 'frontDoor-${primaryResourceToken}'
-  scope: primaryResourceGroup
-  params: {
-    tags: tags
-    logAnalyticsWorkspaceIdForDiagnostics: logAnalyticsForDiagnostics.outputs.LOG_WORKSPACE_ID
-    primaryBackendAddress: primaryResources.outputs.WEB_URI
-    secondaryBackendAddress: isMultiLocationDeployment ? secondaryResources.outputs.WEB_URI : 'none'
-  }
-}
-
-module primaryAppConfigSvcFrontDoorUri 'appConfigSvcKeyValue.bicep' = {
-  name: 'primaryKeyValue'
-  scope: primaryResourceGroup
-  params:{
-    appConfigurationServiceName: primaryResources.outputs.APP_CONFIGURATION_SVC_NAME
-    frontDoorUri: azureFrontDoor.outputs.HOST_NAME
-  }
-}
-
 module primaryKeyVaultDiagnostics 'azureKeyVaultDiagnostics.bicep' = {
   name: 'primaryKeyVaultDiagnostics'
   scope: primaryResourceGroup
   params: {
     keyVaultName: primaryResources.outputs.KEY_VAULT_NAME
-    logAnalyticsWorkspaceIdForDiagnostics: logAnalyticsForDiagnostics.outputs.LOG_WORKSPACE_ID
-  }
-}
-
-module secondaryAppConfigSvcFrontDoorUri 'appConfigSvcKeyValue.bicep' = if (isMultiLocationDeployment) {
-  name: 'secondaryKeyValue'
-  scope: secondaryResourceGroup
-  params:{
-    appConfigurationServiceName: isMultiLocationDeployment ? secondaryResources.outputs.APP_CONFIGURATION_SVC_NAME : 'none'
-    frontDoorUri: azureFrontDoor.outputs.HOST_NAME
-  }
-}
-
-module secondaryKeyVaultDiagnostics 'azureKeyVaultDiagnostics.bicep' = if (isMultiLocationDeployment) {
-  name: 'secondaryKeyVaultDiagnostics'
-  scope: secondaryResourceGroup
-  params: {
-    keyVaultName: isMultiLocationDeployment ? secondaryResources.outputs.KEY_VAULT_NAME : 'none'
     logAnalyticsWorkspaceIdForDiagnostics: logAnalyticsForDiagnostics.outputs.LOG_WORKSPACE_ID
   }
 }
@@ -216,9 +130,5 @@ resource telemetrydeployment 'Microsoft.Resources/deployments@2021-04-01' = if (
   }
 }
 
-output WEB_URI string = 'https://${azureFrontDoor.outputs.HOST_NAME}'
 output AZURE_LOCATION string = location
-
-output DEBUG_IS_MULTI_LOCATION_DEPLOYMENT bool = isMultiLocationDeployment
-output DEBUG_SECONDARY_AZURE_LOCATION string = secondaryAzureLocation
 output DEBUG_IS_PROD bool = isProdBool
