@@ -192,6 +192,7 @@ resource web 'Microsoft.Web/sites@2021-03-01' = {
       ASPNETCORE_ENVIRONMENT: aspNetCoreEnvironment
       AZURE_CLIENT_ID: managedIdentity.properties.clientId
       APPLICATIONINSIGHTS_CONNECTION_STRING: webApplicationInsightsResources.outputs.APPLICATIONINSIGHTS_CONNECTION_STRING
+      'Api:AppConfig:Uri': appConfigService.properties.endpoint
       SCM_DO_BUILD_DURING_DEPLOYMENT: 'false'
       // App Insights settings
       // https://learn.microsoft.com/azure/azure-monitor/app/azure-web-apps-net#application-settings-definitions
