@@ -52,18 +52,18 @@ param azureAdClientSecretForFrontEnd string
 @description('A unique identifier of the Azure AD tenant')
 param azureAdTenantId string
 
-// module setUpAzureAdSettings 'azureAdSettings.bicep' = {
-//   name: 'setUpAzureAdSettings'
-//   params: {
-//     keyVaultName: keyVault.name
-//     appConfigurationServiceName: appConfigService.name    
-//     azureAdApiScopeFrontEnd: azureAdApiScopeFrontEnd
-//     azureAdClientIdForBackEnd: azureAdClientIdForBackEnd
-//     azureAdClientIdForFrontEnd: azureAdClientIdForFrontEnd
-//     azureAdClientSecretForFrontEnd: azureAdClientSecretForFrontEnd
-//     azureAdTenantId: azureAdTenantId
-//   }
-// }
+module setUpAzureAdSettings './azureAdSettings.bicep' = {
+  name: 'setUpAzureAdSettings'
+  params: {
+    keyVaultName: keyVault.name
+    appConfigurationServiceName: appConfigService.name    
+    azureAdApiScopeFrontEnd: azureAdApiScopeFrontEnd
+    azureAdClientIdForBackEnd: azureAdClientIdForBackEnd
+    azureAdClientIdForFrontEnd: azureAdClientIdForFrontEnd
+    azureAdClientSecretForFrontEnd: azureAdClientSecretForFrontEnd
+    azureAdTenantId: azureAdTenantId
+  }
+}
 
 @description('A user-assigned managed identity that is used by the App Service app')
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
@@ -77,7 +77,7 @@ var keyVaultSecretsUserRoleDefinitionId = '4633458b-17de-408a-b874-0445c86b69e6'
 
 @description('Grant the \'Data Reader\' role to the user managed identity, at the scope of the resource group.')
 resource keyVaultRoleAssignmentForWebApp 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid(keyVaultSecretsUserRoleDefinitionId, principalId, resourceToken)
+  name: guid(keyVaultSecretsUserRoleDefinitionId, appConfigService.id, principalId, resourceToken)
   scope: resourceGroup()
   properties: {
     principalType: 'ServicePrincipal'
@@ -92,7 +92,7 @@ var keyVaultAdminRoleDefinitionId = '00482a5a-887f-4fb3-b363-3b7fe8e74483'
 
 @description('Grant the \'Key Vault Administrator\' role to the principal, at the scope of the resource group.')
 resource keyVaultRoleAssignmentForPrincipal 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = if (principalType == 'user') {
-  name: guid(keyVaultAdminRoleDefinitionId, principalId, resourceToken)
+  name: guid(keyVaultAdminRoleDefinitionId, appConfigService.id, principalId, resourceToken)
   scope: resourceGroup()
   properties: {
     principalType: 'User'
@@ -121,6 +121,37 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
       name: 'standard'
     }
     tenantId: subscription().tenantId
+  }
+}
+
+resource appConfigService 'Microsoft.AppConfiguration/configurationStores@2022-05-01' = {
+  name: '${resourceToken}-appconfig'
+  location: location
+  tags: tags
+  sku: {
+    name: 'Standard'
+  }
+  properties:{
+    // This network mode supports making the sample easier to get started
+    // It uses public network access because the values are set by the Azure Resource Provider
+    // by this declarative bicep file. To disable public network access would require
+    // access to the vnet and connecting over the private endpoint
+    // https://github.com/Azure/reliable-web-app-pattern-dotnet/issues/230
+    publicNetworkAccess:'Enabled'
+  }
+
+  resource baseApiUrlAppConfigSetting 'keyValues@2022-05-01' = {
+    name: 'App:RelecloudApi:BaseUri'
+    properties: {
+      value: 'https://${api.properties.defaultHostName}'
+    }
+  }
+
+  resource sqlConnStrAppConfigSetting 'keyValues@2022-05-01' = {
+    name: 'App:SqlDatabase:ConnectionString'
+    properties: {
+      value: 'Server=tcp:${sqlSetup.outputs.sqlServerFqdn},1433;Initial Catalog=${sqlSetup.outputs.sqlCatalogName};Authentication=Active Directory Default'
+    }
   }
 }
 

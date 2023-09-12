@@ -58,6 +58,9 @@ else {
 $keyVaultName = (az keyvault list -g "$ResourceGroupName" --query "[? starts_with(name,'rc-')].name" -o tsv)
 Write-Host $keyVaultName
 
+$appConfigSvcName = (az appconfig list -g "$ResourceGroupName" --query "[].name" -o tsv)
+Write-Host $appConfigSvcName
+
 # updated az resource selection to filter to first based on https://github.com/Azure/azure-cli/issues/25214
 $frontEndWebAppName = (az resource list -g "$ResourceGroupName" --query "[? tags.\`"azd-service-name\`" == 'web' ].name | [0]" -o tsv)
 $apiWebAppName = (az resource list -g "$ResourceGroupName" --query "[? tags.\`"azd-service-name\`" == 'api' ].name | [0]" -o tsv)
@@ -167,7 +170,10 @@ if ($frontEndWebObjectId.Length -eq 0) {
     }
 
     # prod environments do not allow public network access, this must be changed before we can set values
-    if ($isProd) {        
+    if ($isProd) { 
+        # open the app config so that the local user can access
+        az appconfig update --name $appConfigSvcName --resource-group $ResourceGroupName --enable-public-network true > $null
+       
         # open the key vault so that the local user can access
         az keyvault update --name $keyVaultName --resource-group $ResourceGroupName  --public-network-access Enabled > $null
     }
@@ -177,18 +183,18 @@ if ($frontEndWebObjectId.Length -eq 0) {
     Write-Host "Set keyvault value for: 'AzureAd--ClientSecret'"
 
     # save 'AzureAd:TenantId' to App Config Svc
-    # az appconfig kv set --name $appConfigSvcName --key 'AzureAd:TenantId' --value $tenantId --yes --only-show-errors > $null
-    az webapp config appsettings set --name $frontEndWebAppName --resource-group $ResourceGroupName --settings "AzureAd:TenantId=$tenantId" > $null
+    az appconfig kv set --name $appConfigSvcName --key 'AzureAd:TenantId' --value $tenantId --yes --only-show-errors > $null
     Write-Host "Set appconfig value for: 'AzureAd:TenantId'"
 
     #save 'AzureAd:ClientId' to App Config Svc
-    # az appconfig kv set --name $appConfigSvcName --key 'AzureAd:ClientId' --value $frontEndWebAppClientId --yes --only-show-errors > $null
-    az webapp config appsettings set --name $frontEndWebAppName --resource-group $ResourceGroupName --settings "AzureAd:ClientId=$frontEndWebAppClientId" > $null
+    az appconfig kv set --name $appConfigSvcName --key 'AzureAd:ClientId' --value $frontEndWebAppClientId --yes --only-show-errors > $null
     Write-Host "Set appconfig value for: 'AzureAd:ClientId'"
 
-
     # prod environments do not allow public network access
-    if ($isProd) {       
+    if ($isProd) {
+        # close the app config so that the local user can access
+        az appconfig update --name $appConfigSvcName --resource-group $ResourceGroupName --enable-public-network false > $null
+        
         # close the key vault so that the local user can access
         az keyvault update --name $keyVaultName --resource-group $ResourceGroupName  --public-network-access Disabled > $null
     }
@@ -328,19 +334,25 @@ if ( $apiObjectId.Length -eq 0 ) {
     }
 
     # save 'App:RelecloudApi:AttendeeScope' scope for role to App Config Svc
-    # az appconfig kv set --name $appConfigSvcName --key 'App:RelecloudApi:AttendeeScope' --value "api://$apiWebAppClientId/$scopeName" --yes --only-show-errors > $null
-    az webapp config appsettings set --name $apiWebAppName --resource-group $ResourceGroupName --settings "App:RelecloudApi:AttendeeScope=api://$apiWebAppClientId/$scopeName" > $null
+    az appconfig kv set --name $appConfigSvcName --key 'App:RelecloudApi:AttendeeScope' --value "api://$apiWebAppClientId/$scopeName" --yes --only-show-errors > $null
+    # az webapp config appsettings set --name $apiWebAppName --resource-group $ResourceGroupName --settings "App:RelecloudApi:AttendeeScope=api://$apiWebAppClientId/$scopeName" > $null
     Write-Host "Set appconfig value for: 'App:RelecloudApi:AttendeeScope'"
 
     # save 'Api:AzureAd:ClientId' to App Config Svc
-    # az appconfig kv set --name $appConfigSvcName --key 'Api:AzureAd:ClientId' --value $apiWebAppClientId --yes --only-show-errors > $null
-    az webapp config appsettings set --name $apiWebAppName --resource-group $ResourceGroupName --settings "Api:AzureAd:ClientId=$apiWebAppClientId" > $null
+    az appconfig kv set --name $appConfigSvcName --key 'Api:AzureAd:ClientId' --value $apiWebAppClientId --yes --only-show-errors > $null
+    #az webapp config appsettings set --name $apiWebAppName --resource-group $ResourceGroupName --settings "Api:AzureAd:ClientId=$apiWebAppClientId" > $null
     Write-Host "Set appconfig value for: 'Api:AzureAd:ClientId'"
 
     # save 'Api:AzureAd:TenantId' to App Config Svc
-    # az appconfig kv set --name $appConfigSvcName --key 'Api:AzureAd:TenantId' --value $tenantId --yes --only-show-errors > $null
-    az webapp config appsettings set --name $apiWebAppName --resource-group $ResourceGroupName --settings "Api:AzureAd:TenantId=$tenantId" > $null
+    az appconfig kv set --name $appConfigSvcName --key 'Api:AzureAd:TenantId' --value $tenantId --yes --only-show-errors > $null
+    # az webapp config appsettings set --name $apiWebAppName --resource-group $ResourceGroupName --settings "Api:AzureAd:TenantId=$tenantId" > $null
     Write-Host "Set appconfig value for: 'Api:AzureAd:TenantId'"
+
+    # prod environments do not allow public network access
+    if ($isProd) {
+        # close the app config so that the local user can access
+        az appconfig update --name $appConfigSvcName --resource-group $ResourceGroupName --enable-public-network false > $null
+    }
 } 
 else {
     Write-Host "API app registration objectId=$apiObjectId already exists. Delete the '$apiWebAppName' app registration to recreate or reset the settings."
