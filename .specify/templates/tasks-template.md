@@ -49,8 +49,10 @@ description: "Task list template for feature implementation"
 **Purpose**: Project initialization and basic structure
 
 - [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
+- [ ] T002 Initialize .NET 8.0 project with required NuGet packages
 - [ ] T003 [P] Configure linting and formatting tools
+- [ ] T004 [P] Setup Application Insights integration for telemetry (Principle IV)
+- [ ] T005 [P] Configure Azure App Configuration and Key Vault references (Principle VII)
 
 ---
 
@@ -62,12 +64,13 @@ description: "Task list template for feature implementation"
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
+- [ ] T006 Create Bicep templates in `infra/modules/` for new Azure resources (Principle I)
+- [ ] T007 [P] Setup authentication with Microsoft Entra ID (Principle III)
+- [ ] T008 [P] Configure private endpoints and VNet integration (Principle III)
+- [ ] T009 [P] Setup retry and circuit breaker policies using Polly (Principle II)
+- [ ] T010 Create base models/entities with proper validation
+- [ ] T011 Configure error handling and structured logging (Principle IV)
+- [ ] T012 Setup xUnit test projects (unit, integration, contract)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

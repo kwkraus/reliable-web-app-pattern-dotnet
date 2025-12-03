@@ -31,7 +31,17 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+Validate feature design against the seven core principles from `.specify/memory/constitution.md`:
+
+- [ ] **I. Infrastructure as Code**: All Azure resources defined in Bicep, no manual configuration
+- [ ] **II. Test-Driven Reliability**: Tests planned for retry/circuit breaker/failover scenarios
+- [ ] **III. Security by Default**: Uses private endpoints, Key Vault, Entra ID, WAF protection
+- [ ] **IV. Observable Operations**: Application Insights integration, distributed tracing planned
+- [ ] **V. Consistent User Experience**: Follows existing UI patterns, maintains API backward compatibility
+- [ ] **VI. Performance Accountability**: Response time targets documented, load testing planned
+- [ ] **VII. Configuration Over Convention**: Uses App Configuration, no hardcoded environment values
+
+**Exceptions**: [Document any principle exceptions with explicit justification and remediation plan]
 
 ## Project Structure
 
