@@ -17,6 +17,7 @@ targetScope = 'resourceGroup'
 
 import { DiagnosticSettings } from '../../types/DiagnosticSettings.bicep'
 import { PrivateEndpointSettings } from '../../types/PrivateEndpointSettings.bicep'
+import { ApplicationIdentity } from '../../types/ApplicationIdentity.bicep'
 
 // ========================================================================
 // PARAMETERS
@@ -94,8 +95,8 @@ param skuName string = 'Balanced_B1'
 @description('If set, the private endpoint settings for this resource')
 param privateEndpointSettings PrivateEndpointSettings?
 
-@description('The principal IDs to assign the Redis Cache Data Contributor role to.')
-param dataContributorPrincipalIds array = []
+@description('The identities to assign the Redis Cache Data Contributor role to.')
+param dataContributorIdentities ApplicationIdentity[] = []
 
 // ========================================================================
 // VARIABLES
@@ -137,13 +138,13 @@ resource redisDatabase 'Microsoft.Cache/redisEnterprise/databases@2024-09-01-pre
 
 // RBAC role assignments for managed identity access
 @batchSize(1)
-resource redisCacheDataContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for principalId in dataContributorPrincipalIds: {
-  name: guid(redisEnterprise.id, principalId, redisCacheDataContributorRoleId)
+resource redisCacheDataContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for identity in dataContributorIdentities: {
+  name: guid(redisEnterprise.id, identity.principalId, redisCacheDataContributorRoleId)
   scope: redisEnterprise
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', redisCacheDataContributorRoleId)
-    principalId: principalId
-    principalType: 'ServicePrincipal'
+    principalId: identity.principalId
+    principalType: identity.principalType
   }
 }]
 

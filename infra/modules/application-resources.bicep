@@ -401,9 +401,14 @@ module redis '../core/database/managed-redis.bicep' = {
       : null
 
     // Managed identity authentication with Redis Cache Data Contributor role
-    dataContributorPrincipalIds: deploymentSettings.principalId == null
-      ? [ ownerManagedIdentity.outputs.principal_id ]
-      : [ ownerManagedIdentity.outputs.principal_id, deploymentSettings.principalId ]
+    dataContributorIdentities: deploymentSettings.principalId == null
+      ? [
+          { principalId: ownerManagedIdentity.outputs.principal_id, principalType: 'ServicePrincipal' }
+        ]
+      : [
+          { principalId: ownerManagedIdentity.outputs.principal_id, principalType: 'ServicePrincipal' }
+          { principalId: deploymentSettings.principalId, principalType: deploymentSettings.principalType }
+        ]
   }
 }
 
