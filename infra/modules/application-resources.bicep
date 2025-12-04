@@ -373,21 +373,23 @@ module webFrontendFrontDoorRoute '../core/security/front-door-route.bicep' = if 
 }
 
 /*
-** Azure Cache for Redis
+** Azure Managed Redis
+** Replaces Azure Cache for Redis with Azure Managed Redis (Redis Enterprise)
+** SKU: Balanced_B1 (1 GB) for dev/test, Balanced_B5 (6 GB) for production
 */
 
-module redis '../core/database/azure-cache-for-redis.bicep' = {
+module redis '../core/database/managed-redis.bicep' = {
   name: 'application-redis-db-${deploymentSettings.resourceToken}'
   scope: resourceGroup
   params: {
     name: resourceNames.redis
     location: deploymentSettings.location
+    tags: moduleTags
     diagnosticSettings: diagnosticSettings
     logAnalyticsWorkspaceId: logAnalyticsWorkspaceId
-    // vault provided by Hub resource group when network isolated
-    redisCacheSku: deploymentSettings.isProduction ? 'Standard' : 'Basic'
-    redisCacheFamily: 'C'
-    redisCacheCapacity: deploymentSettings.isProduction ? 1 : 0
+    // SKU sizing: Balanced_B5 (6 GB) for production to match previous Premium P1 capacity
+    // Balanced_B1 (1 GB) for dev/test environments
+    skuName: deploymentSettings.isProduction ? 'Balanced_B5' : 'Balanced_B1'
 
     privateEndpointSettings: deploymentSettings.isNetworkIsolated
       ? {
@@ -398,24 +400,10 @@ module redis '../core/database/azure-cache-for-redis.bicep' = {
         }
       : null
 
-    users: deploymentSettings.principalId == null ? [
-      {
-        alias: ownerManagedIdentity.name
-        objectId: ownerManagedIdentity.outputs.principal_id
-        accessPolicy: 'Data Contributor'
-      }
-    ] : [
-      {
-        alias: ownerManagedIdentity.name
-        objectId: ownerManagedIdentity.outputs.principal_id
-        accessPolicy: 'Data Contributor'
-      }
-      {
-        alias: deploymentSettings.principalId
-        objectId: deploymentSettings.principalId
-        accessPolicy: 'Data Contributor'
-      }
-    ]
+    // Managed identity authentication with Redis Cache Data Contributor role
+    dataContributorPrincipalIds: deploymentSettings.principalId == null
+      ? [ ownerManagedIdentity.outputs.principal_id ]
+      : [ ownerManagedIdentity.outputs.principal_id, deploymentSettings.principalId ]
   }
 }
 

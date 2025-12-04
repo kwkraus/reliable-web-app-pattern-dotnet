@@ -1,0 +1,436 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.0",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "10152670995815879118"
+    }
+  },
+  "definitions": {
+    "DiagnosticSettings": {
+      "type": "object",
+      "properties": {
+        "logRetentionInDays": {
+          "type": "int",
+          "metadata": {
+            "description": "The number of days to retain log data."
+          }
+        },
+        "metricRetentionInDays": {
+          "type": "int",
+          "metadata": {
+            "description": "The number of days to retain metric data."
+          }
+        },
+        "enableLogs": {
+          "type": "bool",
+          "metadata": {
+            "description": "If true, enable diagnostic logging."
+          }
+        },
+        "enableMetrics": {
+          "type": "bool",
+          "metadata": {
+            "description": "If true, enable metrics logging."
+          }
+        }
+      },
+      "metadata": {
+        "description": "The diagnostic settings for a resource",
+        "__bicep_imported_from!": {
+          "sourceTemplate": "../../types/DiagnosticSettings.bicep"
+        }
+      }
+    },
+    "PrivateEndpointSettings": {
+      "type": "object",
+      "properties": {
+        "dnsResourceGroupName": {
+          "type": "string",
+          "metadata": {
+            "description": "The name of the resource group to hold the Private DNS Zone. By default, this uses the same resource group as the resource."
+          }
+        },
+        "name": {
+          "type": "string",
+          "metadata": {
+            "description": "The name of the private endpoint resource."
+          }
+        },
+        "resourceGroupName": {
+          "type": "string",
+          "metadata": {
+            "description": "The name of the resource group to hold the private endpoint."
+          }
+        },
+        "subnetId": {
+          "type": "string",
+          "metadata": {
+            "description": "The ID of the subnet to link the private endpoint to."
+          }
+        }
+      },
+      "metadata": {
+        "description": "Type describing the private endpoint settings.",
+        "__bicep_imported_from!": {
+          "sourceTemplate": "../../types/PrivateEndpointSettings.bicep"
+        }
+      }
+    }
+  },
+  "parameters": {
+    "diagnosticSettings": {
+      "$ref": "#/definitions/DiagnosticSettings",
+      "metadata": {
+        "description": "The diagnostic settings to use for logging and metrics."
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "The Azure region for the resource."
+      }
+    },
+    "name": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the primary resource"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "The tags to associate with this resource."
+      }
+    },
+    "logAnalyticsWorkspaceId": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The ID of the Log Analytics workspace to use for diagnostics and logging."
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "Balanced_B1",
+      "allowedValues": [
+        "Balanced_B0",
+        "Balanced_B1",
+        "Balanced_B3",
+        "Balanced_B5",
+        "Balanced_B10",
+        "Balanced_B20",
+        "Balanced_B50",
+        "Balanced_B100",
+        "Balanced_B150",
+        "Balanced_B250",
+        "Balanced_B350",
+        "Balanced_B500",
+        "Balanced_B700",
+        "Balanced_B1000",
+        "MemoryOptimized_M10",
+        "MemoryOptimized_M20",
+        "MemoryOptimized_M50",
+        "MemoryOptimized_M100",
+        "MemoryOptimized_M150",
+        "MemoryOptimized_M250",
+        "MemoryOptimized_M350",
+        "MemoryOptimized_M500",
+        "MemoryOptimized_M700",
+        "MemoryOptimized_M1000",
+        "ComputeOptimized_X3",
+        "ComputeOptimized_X5",
+        "ComputeOptimized_X10",
+        "ComputeOptimized_X20",
+        "ComputeOptimized_X50",
+        "ComputeOptimized_X100",
+        "ComputeOptimized_X150",
+        "ComputeOptimized_X250",
+        "ComputeOptimized_X350",
+        "ComputeOptimized_X500",
+        "ComputeOptimized_X700",
+        "FlashOptimized_A250",
+        "FlashOptimized_A500",
+        "FlashOptimized_A700",
+        "FlashOptimized_A1000",
+        "FlashOptimized_A1500",
+        "FlashOptimized_A2000",
+        "FlashOptimized_A4500"
+      ],
+      "metadata": {
+        "description": "Specify the SKU name for Azure Managed Redis. Use Balanced_B1 for dev/test, Balanced_B5 for production."
+      }
+    },
+    "privateEndpointSettings": {
+      "$ref": "#/definitions/PrivateEndpointSettings",
+      "nullable": true,
+      "metadata": {
+        "description": "If set, the private endpoint settings for this resource"
+      }
+    },
+    "dataContributorPrincipalIds": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "The principal IDs to assign the Redis Cache Data Contributor role to."
+      }
+    }
+  },
+  "variables": {
+    "redisCacheDataContributorRoleId": "e0f68234-74aa-48ed-b826-c38b57376e17"
+  },
+  "resources": {
+    "redisEnterprise": {
+      "type": "Microsoft.Cache/redisEnterprise",
+      "apiVersion": "2024-09-01-preview",
+      "name": "[parameters('name')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "[parameters('skuName')]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "minimumTlsVersion": "1.2"
+      }
+    },
+    "redisDatabase": {
+      "type": "Microsoft.Cache/redisEnterprise/databases",
+      "apiVersion": "2024-09-01-preview",
+      "name": "[format('{0}/{1}', parameters('name'), 'default')]",
+      "properties": {
+        "clientProtocol": "Encrypted",
+        "clusteringPolicy": "OSSCluster",
+        "evictionPolicy": "VolatileLRU",
+        "port": 10000,
+        "accessKeysAuthentication": "Disabled"
+      },
+      "dependsOn": [
+        "redisEnterprise"
+      ]
+    },
+    "redisCacheDataContributorRoleAssignment": {
+      "copy": {
+        "name": "redisCacheDataContributorRoleAssignment",
+        "count": "[length(parameters('dataContributorPrincipalIds'))]",
+        "mode": "serial",
+        "batchSize": 1
+      },
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.Cache/redisEnterprise/{0}', parameters('name'))]",
+      "name": "[guid(resourceId('Microsoft.Cache/redisEnterprise', parameters('name')), parameters('dataContributorPrincipalIds')[copyIndex()], variables('redisCacheDataContributorRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('redisCacheDataContributorRoleId'))]",
+        "principalId": "[parameters('dataContributorPrincipalIds')[copyIndex()]]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "redisEnterprise"
+      ]
+    },
+    "diagnostics": {
+      "condition": "[and(not(equals(parameters('diagnosticSettings'), null())), not(empty(parameters('logAnalyticsWorkspaceId'))))]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "scope": "[format('Microsoft.Cache/redisEnterprise/{0}', parameters('name'))]",
+      "name": "[format('{0}-diagnostics', parameters('name'))]",
+      "properties": {
+        "workspaceId": "[parameters('logAnalyticsWorkspaceId')]",
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": "[parameters('diagnosticSettings').enableMetrics]"
+          }
+        ]
+      },
+      "dependsOn": [
+        "redisEnterprise"
+      ]
+    },
+    "privateEndpoint": {
+      "condition": "[not(equals(parameters('privateEndpointSettings'), null()))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
+      "name": "[format('{0}-private-endpoint', parameters('name'))]",
+      "resourceGroup": "[if(not(equals(parameters('privateEndpointSettings'), null())), parameters('privateEndpointSettings').resourceGroupName, resourceGroup().name)]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": "[if(not(equals(parameters('privateEndpointSettings'), null())), createObject('value', parameters('privateEndpointSettings').name), createObject('value', format('pep-{0}', parameters('name'))))]",
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[parameters('tags')]"
+          },
+          "dnsRsourceGroupName": "[if(equals(parameters('privateEndpointSettings'), null()), createObject('value', resourceGroup().name), createObject('value', parameters('privateEndpointSettings').dnsResourceGroupName))]",
+          "linkServiceId": {
+            "value": "[resourceId('Microsoft.Cache/redisEnterprise', parameters('name'))]"
+          },
+          "linkServiceName": {
+            "value": "[parameters('name')]"
+          },
+          "subnetId": "[if(not(equals(parameters('privateEndpointSettings'), null())), createObject('value', parameters('privateEndpointSettings').subnetId), createObject('value', ''))]",
+          "dnsZoneName": {
+            "value": "privatelink.redisenterprise.cache.azure.net"
+          },
+          "groupIds": {
+            "value": [
+              "redisEnterprise"
+            ]
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.39.26.7824",
+              "templateHash": "4635863665517748797"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The Azure region for the resource."
+              }
+            },
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the primary resource"
+              }
+            },
+            "tags": {
+              "type": "object",
+              "defaultValue": {},
+              "metadata": {
+                "description": "The tags to associate with this resource."
+              }
+            },
+            "linkServiceId": {
+              "type": "string",
+              "metadata": {
+                "description": "The ID of the linked service"
+              }
+            },
+            "linkServiceName": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the linked service"
+              }
+            },
+            "subnetId": {
+              "type": "string",
+              "metadata": {
+                "description": "The ID of the subnet to host the private endpoint"
+              }
+            },
+            "dnsRsourceGroupName": {
+              "type": "string",
+              "metadata": {
+                "description": "The resourceGroup where the Private DNS zone is located"
+              }
+            },
+            "dnsZoneName": {
+              "type": "string",
+              "metadata": {
+                "description": "The DNS zone name that will be used for registering the private link."
+              }
+            },
+            "groupIds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "metadata": {
+                "description": "The list of group IDs to redirect through the private endpoint."
+              }
+            }
+          },
+          "resources": {
+            "privateEndpoint": {
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2022-11-01",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]",
+              "properties": {
+                "subnet": {
+                  "id": "[parameters('subnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "[parameters('linkServiceName')]",
+                    "properties": {
+                      "privateLinkServiceId": "[parameters('linkServiceId')]",
+                      "groupIds": "[parameters('groupIds')]"
+                    }
+                  }
+                ]
+              }
+            },
+            "dnsGroupName": {
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2022-11-01",
+              "name": "[format('{0}/{1}', parameters('name'), 'mydnsgroupname')]",
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "config1",
+                    "properties": {
+                      "privateDnsZoneId": "[if(equals(parameters('dnsRsourceGroupName'), ''), resourceId('Microsoft.Network/privateDnsZones', parameters('dnsZoneName')), resourceId(parameters('dnsRsourceGroupName'), 'Microsoft.Network/privateDnsZones', parameters('dnsZoneName')))]"
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "privateEndpoint"
+              ]
+            }
+          },
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/privateEndpoints', parameters('name'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('name')]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "redisEnterprise"
+      ]
+    }
+  },
+  "outputs": {
+    "id": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Cache/redisEnterprise', parameters('name'))]"
+    },
+    "name": {
+      "type": "string",
+      "value": "[parameters('name')]"
+    },
+    "hostName": {
+      "type": "string",
+      "value": "[reference('redisEnterprise').hostName]"
+    }
+  }
+}
