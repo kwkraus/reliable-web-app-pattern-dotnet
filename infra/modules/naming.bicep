@@ -95,7 +95,7 @@ var defaultResourceNames = {
   frontDoorProfile: 'afd-${resourceToken}'
   ownerManagedIdentity: 'id-owner-${resourceToken}'
   resourceGroup: '${resourceGroupPrefix}-application'
-  redis: 'redis-${resourceToken}'
+  redis: 'redisenterprise-${resourceToken}'
   redisPrivateEndpoint: 'pep-redis-${resourceToken}'
   storageAccount: 'st${deploymentSettings.stage}${resourceToken}'
   storageAccountPrivateEndpoint: 'pep-st-${resourceToken}'

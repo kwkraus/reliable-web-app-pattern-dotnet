@@ -26,7 +26,7 @@ param privateDnsZones array = [
   'privatelink.vaultcore.azure.net'
   'privatelink${az.environment().suffixes.sqlServerHostname}'
   'privatelink.azurewebsites.net'
-  'privatelink.redis.cache.windows.net'
+  'privatelink.redisenterprise.cache.azure.net'
   'privatelink.azconfig.io'
   'privatelink.blob.${environment().suffixes.storage}'
 ]

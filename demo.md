@@ -82,7 +82,7 @@ The Cache-Aside pattern enables us to reduce read queries to SQL server. It also
 
 For more information, see [Cache-Aside pattern](https://learn.microsoft.com/azure/architecture/patterns/cache-aside).
 
-We can observe this behavior in App Insights by testing two different pages. First, visit the "Upcoming Concerts" page and refresh the page a couple of times. The first time the page is loaded the web API app will send a request to SQL server, but the following requests will go to Azure Cache for Redis.
+We can observe this behavior in App Insights by testing two different pages. First, visit the "Upcoming Concerts" page and refresh the page a couple of times. The first time the page is loaded the web API app will send a request to SQL server, but the following requests will go to Azure Managed Redis.
 
 ![image of App Insights shows connection to SQL server to retrieve data](./assets/images/Guide/Simulating_AppInsightsRequestWithSqlServer.png)
 
@@ -90,13 +90,13 @@ In this screenshot above we see a connection was made to SQL server and that ret
 
 ![image of App Insights shows request returns data without SQL](./assets/images/Guide/Simulating_AppInsightsRequestWithoutSql.png)
 
-In the next request we see that the total duration of the API call was only 10.4 ms because it didn't have to connect to SQL Server and instead used the data from Azure Cache for Redis.
+In the next request we see that the total duration of the API call was only 10.4 ms because it didn't have to connect to SQL Server and instead used the data from Azure Managed Redis.
 
-Using the (PREVIEW) Redis Console we can see this data stored in Redis.
+Using the Redis Console we can see this data stored in Redis.
 
-Open the Redis Console by navigating to the Azure Cache for Redis resource in the Azure Portal and clicking the "Console" link above the overview details for this resource.
+Open the Redis Console by navigating to the Azure Managed Redis resource in the Azure Portal and clicking the "Console" link above the overview details for this resource.
 
-![image of Azure Cache for Redis Console](./assets/images/Guide/Simulating_RedisConsole.png)
+![image of Azure Managed Redis Console](./assets/images/Guide/Simulating_RedisConsole.png)
 
 
 Run the following command to see all cached keys:
@@ -105,7 +105,7 @@ Run the following command to see all cached keys:
 SCAN 0 COUNT 1000 MATCH *
 ```
 
-![image of Azure Cache for Redis Console lists all keys](./assets/images/Guide/Simulating_RedisConsoleListKeys.png)
+![image of Azure Managed Redis Console lists all keys](./assets/images/Guide/Simulating_RedisConsoleListKeys.png)
 
 Run the next command to see the concert data cached from the database:
 
@@ -113,6 +113,6 @@ Run the next command to see the concert data cached from the database:
 HGETALL UpcomingConcerts
 ```
 
-![image of Azure Cache for Redis Console shows data for upcoming concerts](./assets/images/Guide/Simulating_RedisConsoleShowUpcomingConcerts.png)
+![image of Azure Managed Redis Console shows data for upcoming concerts](./assets/images/Guide/Simulating_RedisConsoleShowUpcomingConcerts.png)
 
 > You can use the command `DEL UpcomingConcerts` to delete this data from Redis and see the cache rebuild.

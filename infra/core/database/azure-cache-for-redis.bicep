@@ -8,6 +8,11 @@ targetScope = 'resourceGroup'
 ***************************************************************************
 **
 ** Creates an Azure Cache for Redis resource, including permission grants and diagnostics.
+**
+** DEPRECATION NOTICE:
+** This module has been replaced by managed-redis.bicep which deploys Azure Managed Redis.
+** This file is retained for rollback purposes only. For new deployments, use managed-redis.bicep.
+** See specs/001-redis-migration/ for migration documentation.
 */
 
 // ========================================================================
