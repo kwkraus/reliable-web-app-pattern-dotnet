@@ -55,6 +55,9 @@
     },
     "azureSecondaryLocation": {
       "value": "${AZURE_SECONDARY_LOCATION}"
+    },
+    "useManagedRedis": {
+      "value": "${USE_MANAGED_REDIS=false}"
     }
   }
 }

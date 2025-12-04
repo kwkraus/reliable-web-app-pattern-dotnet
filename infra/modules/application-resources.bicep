@@ -53,6 +53,9 @@ param clientIpAddress string = ''
 @description('If true, use a common App Service Plan.  If false, use a separate App Service Plan per App Service.')
 param useCommonAppServicePlan bool
 
+@description('Use Azure Managed Redis instead of Azure Cache for Redis. Default is false for backward compatibility.')
+param useManagedRedis bool = false
+
 // ========================================================================
 // VARIABLES
 // ========================================================================
@@ -373,11 +376,58 @@ module webFrontendFrontDoorRoute '../core/security/front-door-route.bicep' = if 
 }
 
 /*
-** Azure Cache for Redis
+** Azure Cache for Redis (Legacy - used when useManagedRedis is false)
 */
 
-module redis '../core/database/azure-cache-for-redis.bicep' = {
+module redis '../core/database/azure-cache-for-redis.bicep' = if (!useManagedRedis) {
   name: 'application-redis-db-${deploymentSettings.resourceToken}'
+  scope: resourceGroup
+  params: {
+    name: resourceNames.redis
+    location: deploymentSettings.location
+    diagnosticSettings: diagnosticSettings
+    logAnalyticsWorkspaceId: logAnalyticsWorkspaceId
+    // vault provided by Hub resource group when network isolated
+    redisCacheSku: deploymentSettings.isProduction ? 'Standard' : 'Basic'
+    redisCacheFamily: 'C'
+    redisCacheCapacity: deploymentSettings.isProduction ? 1 : 0
+
+    privateEndpointSettings: deploymentSettings.isNetworkIsolated
+      ? {
+          dnsResourceGroupName: dnsResourceGroupName
+          name: resourceNames.redisPrivateEndpoint
+          resourceGroupName: resourceNames.spokeResourceGroup
+          subnetId: subnets[resourceNames.spokePrivateEndpointSubnet].id
+        }
+      : null
+
+    users: deploymentSettings.principalId == null ? [
+      {
+        alias: ownerManagedIdentity.name
+        objectId: ownerManagedIdentity.outputs.principal_id
+        accessPolicy: 'Data Contributor'
+      }
+    ] : [
+      {
+        alias: ownerManagedIdentity.name
+        objectId: ownerManagedIdentity.outputs.principal_id
+        accessPolicy: 'Data Contributor'
+      }
+      {
+        alias: deploymentSettings.principalId
+        objectId: deploymentSettings.principalId
+        accessPolicy: 'Data Contributor'
+      }
+    ]
+  }
+}
+
+/*
+** Azure Managed Redis (New - used when useManagedRedis is true)
+*/
+
+module managedRedis '../core/database/azure-managed-redis.bicep' = if (useManagedRedis) {
+  name: 'application-managed-redis-db-${deploymentSettings.resourceToken}'
   scope: resourceGroup
   params: {
     name: resourceNames.redis

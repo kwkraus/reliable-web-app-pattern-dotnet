@@ -89,6 +89,10 @@ param azureSecondaryLocation string = ''
 @description('Should we deploy a common app service plan, used by both the API and WEB app services?  \'auto\' will deploy a common app service plan in dev, but separate plans in prod.')
 param useCommonAppServicePlan string = 'auto'
 
+// Use Azure Managed Redis instead of Azure Cache for Redis
+@description('Use Azure Managed Redis instead of Azure Cache for Redis. Set to true to deploy Azure Managed Redis.')
+param useManagedRedis bool = false
+
 // ========================================================================
 // VARIABLES
 // ========================================================================
@@ -414,6 +418,7 @@ module application './modules/application-resources.bicep' = {
     // Settings
     clientIpAddress: clientIpAddress
     useCommonAppServicePlan: willDeployCommonAppServicePlan
+    useManagedRedis: useManagedRedis
   }
   dependsOn: [
     resourceGroups
@@ -438,6 +443,7 @@ module application2 './modules/application-resources.bicep' =  if (isMultiLocati
     // Settings
     clientIpAddress: clientIpAddress
     useCommonAppServicePlan: willDeployCommonAppServicePlan
+    useManagedRedis: useManagedRedis
   }
   dependsOn: [
     resourceGroups2
