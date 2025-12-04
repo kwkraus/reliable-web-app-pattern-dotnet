@@ -1,6 +1,15 @@
 # Testing scripts
 These scripts are used by the engineering team to accelerate the testing process through deployment automation.
 
+## Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `setup.ps1` | Provisions a new environment with configurable options |
+| `cleanup.ps1` | Cleans up a provisioned environment |
+| `validate-deployment.ps1` | Validates a deployment is working correctly |
+| `validate-managed-redis.ps1` | Validates Azure Managed Redis deployment and configuration |
+
 ## Workflow
 
 1. From terminal in the devcontainer start powershell
@@ -72,3 +81,42 @@ These scripts are used by the engineering team to accelerate the testing process
     ```pwsh
     .\testscripts\cleanup.ps1 -ResourceGroup rg-reledev7-dev-westus3-application
     ```
+
+## Validating Azure Managed Redis
+
+After deployment, you can validate the Azure Managed Redis configuration using:
+
+```pwsh
+.\testscripts\validate-managed-redis.ps1 `
+    -ResourceGroupName "rg-myapp-dev-westus3-application" `
+    -RedisName "redisenterprise-abc123" `
+    -ExpectedSku "Balanced_B1"
+```
+
+For production environments with network isolation:
+
+```pwsh
+.\testscripts\validate-managed-redis.ps1 `
+    -ResourceGroupName "rg-myapp-prod-westus3-application" `
+    -RedisName "redisenterprise-xyz789" `
+    -ExpectedSku "Balanced_B5" `
+    -CheckPrivateEndpoint `
+    -KeyVaultName "kv-myapp-prod"
+```
+
+### Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `-ResourceGroupName` | Yes | The Azure resource group containing the Managed Redis instance |
+| `-RedisName` | Yes | The name of the Azure Managed Redis instance |
+| `-ExpectedSku` | Yes | Expected SKU (e.g., `Balanced_B1` for dev, `Balanced_B5` for production) |
+| `-KeyVaultName` | No | Key Vault name to validate connection string secret |
+| `-CheckPrivateEndpoint` | No | Switch to validate private endpoint configuration |
+
+### Exit Codes
+
+- `0`: All validation checks passed
+- `1`: One or more validation checks failed
+
+The script outputs structured JSON for CI/CD integration.
