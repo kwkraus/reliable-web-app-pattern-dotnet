@@ -104,5 +104,25 @@ To support this workflow the following steps will store data in [User Secrets](h
 
     ![screenshot of web app home page](assets/images/WebAppHomePage.png)
 
+## Redis Configuration
+
+This project supports both Azure Cache for Redis (legacy) and Azure Managed Redis via a feature flag. To toggle between them:
+
+### Using Azure Cache for Redis (Default)
+```pwsh
+azd env set USE_MANAGED_REDIS false
+azd provision
+azd deploy
+```
+
+### Using Azure Managed Redis
+```pwsh
+azd env set USE_MANAGED_REDIS true
+azd provision
+azd deploy
+```
+
+For more details, see [Azure Managed Redis Migration](./README.md#azure-managed-redis-migration).
+
 ## Next steps
 You can learn more about the web app by reading the [Pattern Simulations](demo.md) documentation.

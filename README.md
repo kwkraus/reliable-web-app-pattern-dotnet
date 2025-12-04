@@ -17,7 +17,7 @@ This project has [a companion article in the Azure Architecture Center](https://
 Relecloud aligned to a hub and spoke network topology in the production deployment architecture to centralize common resources. This network topology provided cost savings, enhanced security, and facilitated network integration (platform and hybrid):
 
 >[!WARNING]
-> **DEPRECATED:** [Azure Cache for Redis is retired](https://learn.microsoft.com/azure/azure-cache-for-redis/cache-retired-features). We will be updating this implementation to use [Azure Managed Redis](https://learn.microsoft.com/azure/redis/migrate/migrate-overview).
+> **DEPRECATED:** [Azure Cache for Redis is retired](https://learn.microsoft.com/azure/azure-cache-for-redis/cache-retired-features). This implementation now supports [Azure Managed Redis](https://learn.microsoft.com/azure/redis/migrate/migrate-overview) via a feature flag. See [Azure Managed Redis Migration](#azure-managed-redis-migration) below for details.
 
 ![architecture diagram](./assets/icons/reliable-web-app-dotnet.svg)
 
@@ -176,6 +176,54 @@ Run the following command to tear down the deployment:
 ```pwsh
 azd down --purge --force
 ```
+
+## Azure Managed Redis Migration
+
+This implementation supports both Azure Cache for Redis (legacy) and Azure Managed Redis via a feature flag. Azure Managed Redis is the successor to Azure Cache for Redis and offers enhanced features and simplified management.
+
+### Enable Azure Managed Redis
+
+To deploy with Azure Managed Redis instead of Azure Cache for Redis:
+
+```pwsh
+# Set the feature flag
+azd env set USE_MANAGED_REDIS true
+
+# Provision and deploy
+azd up
+```
+
+### Rollback to Azure Cache for Redis
+
+To revert to the legacy Azure Cache for Redis:
+
+```pwsh
+# Set the feature flag
+azd env set USE_MANAGED_REDIS false
+
+# Provision and deploy
+azd up
+```
+
+### Migration Scripts
+
+Migration scripts are available in the `testscripts/` directory:
+
+```pwsh
+# Check current Redis configuration status
+.\testscripts\migrate-to-managed-redis.ps1 -Action Status
+
+# Enable Azure Managed Redis
+.\testscripts\migrate-to-managed-redis.ps1 -Action Enable -Environment dev
+
+# Validate the deployment
+.\testscripts\migrate-to-managed-redis.ps1 -Action Validate
+
+# Rollback if needed
+.\testscripts\migrate-to-managed-redis.ps1 -Action Disable
+```
+
+For more details, see the [Redis infrastructure documentation](./infra/core/database/README.md).
 
 ## Additional links
 

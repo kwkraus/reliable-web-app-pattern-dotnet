@@ -97,6 +97,14 @@ The following detailed deployment steps assume you are using a Dev Container ins
 
     *We encourage readers to choose paired regions for multi-regional web apps. Paired regions typically offer low network latency, data residency in the same geography, and sequential updating. Read [Azure paired regions](https://learn.microsoft.com/en-us/azure/reliability/cross-region-replication-azure#azure-paired-regions) to learn more about these regions.*
 
+1. (Optional) Enable Azure Managed Redis instead of Azure Cache for Redis:
+
+    ```pwsh
+    azd env set USE_MANAGED_REDIS true
+    ```
+
+    > **Note:** Azure Managed Redis is the successor to Azure Cache for Redis. This is optional but recommended for new deployments. See [Azure Managed Redis Migration](./README.md#azure-managed-redis-migration) for details.
+
 1. Run the following command to create the Azure resources (about 45-minutes to provision):
 
     ```pwsh
